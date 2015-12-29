@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset=utf-8>
+  <title>Megan's life problem</title>
+</head>
+<body style="font-family:sans-serif;padding:10px;">
+  <h2>The Problem</h2>
+  <p>Megan has trouble managing her money. Megan has n number of sources of income (multiple jobs), each on an understood schedule, e.g. every other Friday, or on the 1st and 15th of every month, etc. For this exercise, let’s assume we’ve already Even-ed out her pay, so every paycheck for each job is a predictable amount. Megan has m number of obligations (rent, utilities, credit card payment, car insurance, etc.) also on set schedules, e.g. rent money needs to be available on the 1st, credit card on the 12th, car insurance on the 24th, and so on. She also has a number of goals. She wants to save up $500 to visit her family on September 3. She wants $100 for horse riding lessons each week, needs $200 for groceries every month, and sends money home to her father every other month on the 5th for her health insurance.</p>
+  <p>If we wanted to guarantee that Megan had enough money for each of her expenses when they arrived, how might we go about setting aside money from her paychecks to cover them? Any money not set aside will be considered discretionary income, which Megan will spend. Additionally, how would we go about ensuring that Megan always receives a consistent amount of discretionary income, regardless of the expenses in that particular cycle? For the purpose of this exercise, let’s assume Megan is solvent.</p>
+  <h2>Let's help Megan!</h2>
+  <p>For the input, let's represent income as positive integers, and bills/goals as negative integers. For now we assume that the distribution of the paycheck days are pretty even, so actual dates of the schedule doesn’t matter, it is the sequence that matters (i.e. Bills must be payed by the money made from previous paychecks). Therefore Megan’s financial status can be represented by an array of positive or negative integers. For example, if Megan get her paychecks of $15 on the 2nd and the 15th, another paycheck of $2 on the 1st and 3rd and credit card bill of $5 on the 10th, and rent of $8 on the 12th, and utility payments of $10 on the 20th, then we represent it as [2, 15, 2, -5, -8, 15, -10]. Note that we only accept integers to avoid floating point errors in javascript. If in the future we want to support fraction of a dollar, I think it is safer to scale all the numbers to cents or microns, and still do the arithmetic in integers.</p>
+  <p>From the input, we can see that consecutive bills can be grouped into one bill, since we need to pay them all from the previous paychecks anyways. Therefore we can consolidate the array from the previous example to: [2, 15, 2, -13, 15, -10]. Now let's try to pay off the bills from the checks. First, we just try to blindly pay off the bills from the check immediately before it. So after paying the bills, our four poor paychecks have [2, 15, -11, 5] left on them, which is the discretionary income. As you can see, during the third paycheck Megan becomes in debt because the paycheck is too little to pay off the upcoming bill. However, if we deduct more money from the previous paycheck, Megan does not need to be in debt.</p>
+  <p>So, let's try to even out her discretionary income. To do this, let's calculate a value called "distributable income". For each paycheck, the distributable income will be the sum of discretionary income in the previous paychecks and itself. These are the money that is free to be moved to it while still being able to pay off the bills. For the example above, for the fourth paycheck, the distributable income is 5 -11 + 15 + 2 = 11, for the third paycheck, the distributable income is -11 + 15 + 2 = 6, etc. For each paycheck, we expect to have an average discretionary income of distributableIncome/(numOfPreviousChecks + 1). If the currenct discretionary income is below the desired average, we try to match it up to the average from the distributable income, and subtract the distributable income with the value that we distributed to the paycheck. On the other hand, if the current discretionary income is above average and a match up for a later paycheck is needed, we distribute some money to pay off the match, as long as we still have a discretionary income above average. After this process is done, we will get a result of [2, 2, 2, 5]. As you can see, even though the discretionary income is not completely even, it is the best effort we can make without charging from the future paychecks.</p>
+  <p>You can see the code for this in <a href="megan.js">megan.js</a>. Below I also attached a bunch of test cases. The results are shown in the format of lists of checks with the original amount and the discretionary income after deduction. The verified line returns false if Megan is ever in debt for the particular cycle after deduction.</p>
+  <div id="testcases" style="padding: 20px;background-color: #EEEEEE;font-family: monospace;"></div>
+
+<script src="megan.js"></script>
+<script>
+
+(function() {
+  var old = console.log;
+  var testcases = document.getElementById('testcases');
+  console.log = function (message) {
+    testcases.innerHTML += message + '<br />';
+  };
+  var runTestCase = function(testCase) {
+    console.log("Running test case: [" + testCase + "]");
+    try {
+      var financeCycle = new FinanceCycle(testCase);
+      financeCycle.deductPaychecks();
+      console.log("Result: " + financeCycle.toString());
+      console.log("Verified: " + financeCycle.verify());
+    } catch(err) {
+      console.log("ERROR: " + err);
+    }
+    console.log("-----");
+  };
+
+  runTestCase([]);
+  runTestCase([1, 2, 3, 4, 5, 6, 7]);
+  runTestCase([1, 0, 0, 0 , 4, 5, 6, 6, -5]);
+  runTestCase([2, 15, 2, -5, -8, 15, -10]);
+  runTestCase([100, -50, 30, 10, -70, 20, 50, -30, -20]);
+  runTestCase([100, -10, -15, -20, 100, -10, 5, -120, 5]);
+  runTestCase([30, 50, 80, -20, 30, 50, 80, -20, 30, 50, 80, -380]);
+  runTestCase([100, 120, 80, -150, 100, 50, 120, -30]);
+  runTestCase([10000, 1220, 810, -10500, -300, 5990, 120, -30, -6500]);
+  runTestCase([100, -10, -90]);
+  runTestCase([3, 22, 80, -2, -90]);
+  runTestCase([3, 22, -21, 80, -2, -10, 100, -50]);
+  runTestCase([100, -50, 30, 10, -70, 20, 50, -30, -20, 3, 22, 80, -2, -90, 100, -10, -90, 100, 120,
+      80, -150, 100, 50, 120, -30, 100, -10, -15, -20, 100, -10, 5, -120, 5, 30, 50, 80, -20, 30,
+      50, 80, -20, 30, 50, 80, -380]);
+  // Fail case. In this case, the previously earned money could not pay off our debts. Which
+  // violates our assumption.
+  console.log("// This case will fail because the previously earned money could not pay off our" +
+      " debts, which violates our assumption.");
+  runTestCase([10, -5, 100, -10, -120, 200, 10, -5]);
+  // Fail case. In this case, the previously earned money could not pay off our debts. Which
+  // violates our assumption.
+  console.log("// This case will fail because the previously earned money could not pay off our" +
+      " debts, which violates our assumption.");
+  runTestCase([100, -10, -120, 200]);
+  // Invalid case.
+  console.log("// This case will throw an exception because it violates the solvent assumption.");
+  runTestCase([-100, 100]);
+  // Other invalid cases for now.
+  console.log("// Invalid input: non integers.");
+  runTestCase([100, 100.2, -30.5]);
+  console.log("// Invalid input: not a number.");
+  runTestCase([100.5, "lol", -30.5]);
+
+})();
+
+</script>
+
+</body>
+</html>
