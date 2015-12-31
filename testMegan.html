@@ -20,17 +20,46 @@
 
 (function() {
   var old = console.log;
-  var testcases = document.getElementById('testcases');
+  var testCaseDiv = document.getElementById('testcases');
   console.log = function (message) {
-    testcases.innerHTML += message + '<br />';
+    testCaseDiv.innerHTML += message + '<br />';
   };
+
+  // This class generates finance data from an array of positive or negative integers. Some of the
+  // data are filled in automatically so that we don't need to manually create these for tests.
+  var FinanceDataFromTestCase = function(testCase) {
+    // Generate finance data to pass in to the finance cycle from the testCase array.
+    this.sequence = [];
+    var testCaseCount = testCase.length;
+    for (var i = 0; i < testCaseCount; i++) {
+      var date = new Date(2016, 0, i + 1);
+      var amount = testCase[i];
+      if (amount > 0) {
+        var check = new Check(amount, date, "Check from hard work!");
+        this.sequence.push(check);
+      } else if (amount < 0) {
+        this.randomlyAddBillOrGoal(amount, date);
+      }
+    }
+  };
+  FinanceDataFromTestCase.prototype.randomlyAddBillOrGoal = function(amount, date) {
+    if (Math.floor(Math.random() * 2) == 0) {
+      var bill = new Bill(-amount, date, "Evil bill");
+      this.sequence.push(bill);
+    } else {
+      var goal = new Goal(-amount, date, "Happy goal");
+      this.sequence.push(goal);
+    }
+  };
+
   var runTestCase = function(testCase) {
-    console.log("Running test case: [" + testCase + "]");
+    console.log("Running test case: " + testCase);
     try {
-      var financeCycle = new FinanceCycle(testCase);
+      var financeData = new FinanceDataFromTestCase(testCase);
+      var financeCycle = new FinanceCycle(financeData.sequence);
       financeCycle.deductPaychecks();
-      console.log("Result: " + financeCycle.toString());
-      console.log("Verified: " + financeCycle.verify());
+      console.log("Result:");
+      financeCycle.print();
     } catch(err) {
       console.log("ERROR: " + err);
     }
@@ -38,16 +67,17 @@
   };
 
   runTestCase([]);
-  runTestCase([1, 2, 3, 4, 5, 6, 7]);
-  runTestCase([1, 0, 0, 0 , 4, 5, 6, 6, -5]);
-  runTestCase([2, 15, 2, -5, -8, 15, -10]);
-  runTestCase([100, -50, 30, 10, -70, 20, 50, -30, -20]);
-  runTestCase([100, -10, -15, -20, 100, -10, 5, -120, 5]);
+  runTestCase([0, 0, 0, 0]);
+  runTestCase([100, 200, 300, 400, 500, 600, 700]);
+  runTestCase([1000, 0, 0, 0 , 4000, 5000, 0, 0, 0, 6000, 0, 0, 6000, -5000]);
+  runTestCase([2100, 150, 0, 0, 0, 200, 0, 0, -500, 0, 0, -800, 0, 0, 0, 1500, -1000]);
+  runTestCase([1000, 0, 0, 0,-500, 300, 0, 100, -700, 0, 200, 500, 0, -300, -200]);
+  runTestCase([10000, -1000, -1500, -2000, 10000, -1000, 500, -12000, 500]);
   runTestCase([30, 50, 80, -20, 30, 50, 80, -20, 30, 50, 80, -380]);
   runTestCase([100, 120, 80, -150, 100, 50, 120, -30]);
-  runTestCase([10000, 1220, 810, -10500, -300, 5990, 120, -30, -6500]);
+  runTestCase([10000, 1220, 0, 0, 0, 0, 0, 0, 0, 810, -10500, -300, 5990, 120, -30, -6500]);
   runTestCase([100, -10, -90]);
-  runTestCase([3, 22, 80, -2, -90]);
+  runTestCase([3, 0, 0, 0, 22, 0, 0, 0, 0, 80, 0, 0, 0, 0, -2, 0, 0, 0, 0, -90]);
   runTestCase([3, 22, -21, 80, -2, -10, 100, -50]);
   runTestCase([100, -50, 30, 10, -70, 20, 50, -30, -20, 3, 22, 80, -2, -90, 100, -10, -90, 100, 120,
       80, -150, 100, 50, 120, -30, 100, -10, -15, -20, 100, -10, 5, -120, 5, 30, 50, 80, -20, 30,
@@ -61,13 +91,13 @@
   // violates our assumption.
   console.log("// This case will fail because the previously earned money could not pay off our" +
       " debts, which violates our assumption.");
-  runTestCase([100, -10, -120, 200]);
+  runTestCase([100, 0, 0, 0, -10, -120, 200]);
   // Invalid case.
   console.log("// This case will throw an exception because it violates the solvent assumption.");
-  runTestCase([-100, 100]);
+  runTestCase([-100, 0, 0, 0, 100]);
   // Other invalid cases for now.
   console.log("// Invalid input: non integers.");
-  runTestCase([100, 100.2, -30.5]);
+  runTestCase([100, 100.2, 0, 0, 0, -30.5]);
   console.log("// Invalid input: not a number.");
   runTestCase([100.5, "lol", -30.5]);
 
